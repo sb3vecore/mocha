@@ -1,0 +1,30 @@
+# .github/workflows/deployhealth.yml
+name: deployhealth
+
+# Must not run on pull_request events from forks: the job reads a repository secret.
+on:
+  push:
+    branches: [main]
+
+jobs:
+  env-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - name: Scan env vars and report to deployhealth
+        env:
+          DEPLOYHEALTH_TOKEN: ${{ secrets.DEPLOYHEALTH_TOKEN }}
+        run: |
+          npx --yes deployhealth-scan@0.3.1 \
+            --url https://deployhealth.dev \
+            --token "$DEPLOYHEALTH_TOKEN" \
+            --sha "$GITHUB_SHA" \
+            --branch "$GITHUB_REF_NAME"
